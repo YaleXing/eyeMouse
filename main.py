@@ -21,7 +21,7 @@ from core.mouse_controller import MouseController
 from core.calibrator import Calibrator
 
 
-def draw_debug_info(frame, landmarks, gaze_pos, mar, mouse_enabled, fps_val):
+def draw_debug_info(frame, landmarks, gaze_pos, mar, mouse_enabled, fps_val, manual_offset=None):
     """在调试画面上绘制信息"""
     h, w = frame.shape[:2]
 
@@ -39,6 +39,11 @@ def draw_debug_info(frame, landmarks, gaze_pos, mar, mouse_enabled, fps_val):
     mar_color = (0, 0, 255) if mar > config.MOUTH_OPEN_THRESHOLD else (200, 200, 200)
     cv2.putText(frame, f"MAR: {mar:.4f}", (10, 90),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, mar_color, 1)
+
+    # 手动偏移
+    if manual_offset is not None:
+        cv2.putText(frame, f"Offset: X={manual_offset[0]:.0f} Y={manual_offset[1]:.0f}", (10, 120),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 100), 1)
 
     # 热键提示
     cv2.putText(frame, "ESC:quit  P:pause  C:recalibrate", (10, h - 15),
@@ -64,14 +69,35 @@ def run_calibration(camera, face_detector, gaze_tracker, screen_w, screen_h):
     # 尝试加载已有校准数据
     M, offset = calibrator.load_calibration()
     if M is not None:
-        print("[校准] 使用已保存的校准数据")
+        # 加载后仍需设置当前头部基准
+        print("[校准] 使用已保存的校准数据，正在设置头部基准...")
+        for _ in range(10):
+            ret, frame = camera.read()
+            if not ret:
+                continue
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            faces = face_detector.detect(frame_rgb)
+            if faces:
+                gaze_tracker.set_head_baseline(faces[0])
+                break
         return M, offset
 
     print("[校准] 开始校准，请注视屏幕上的红点...")
     print(f"[校准] 共 {len(calibrator.points)} 个校准点，每个需要注视 {config.CALIBRATION_HOLD_TIME} 秒")
+    print("[校准] 校准过程中请保持头部基本不动，只用眼球看红点")
 
     cv2.namedWindow("Calibration", cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty("Calibration", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    # 校准开始前设置头部基准
+    for _ in range(15):
+        ret, frame = camera.read()
+        if not ret:
+            continue
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        faces = face_detector.detect(frame_rgb)
+        if faces:
+            gaze_tracker.set_head_baseline(faces[0])
 
     for point_idx in range(len(calibrator.points)):
         collected = 0
@@ -169,7 +195,7 @@ def main():
         print("[校准] 跳过校准，使用默认映射（精度较低）")
 
     # ── 主循环 ──
-    print("\n[运行] 按 ESC 退出，P 暂停/恢复，C 重新校准")
+    print("\n[运行] ESC退出 | P暂停 | C重校准 | 方向键微调偏移")
     paused = False
     fps_counter = 0
     fps_time = time.time()
@@ -221,7 +247,8 @@ def main():
                     print("[点击] 张嘴触发左键")
 
             elif not faces:
-                gaze_tracker.reset()
+                # 面部丢失时只重置平滑器，保留头部基准
+                gaze_tracker.smoother.reset()
 
             # 调试画面
             if config.DEBUG_SHOW_VIDEO:
@@ -232,6 +259,7 @@ def main():
                 debug_frame = draw_debug_info(
                     debug_frame, faces[0] if faces else None,
                     gaze_pos, mar, not paused, fps_val,
+                    gaze_tracker.manual_offset,
                 )
 
                 # 缩放调试窗口
@@ -240,8 +268,25 @@ def main():
                 debug_frame = cv2.resize(debug_frame, (int(w * scale), int(h * scale)))
                 cv2.imshow("EyeMouse Debug", debug_frame)
 
-            # 按键处理
-            key = cv2.waitKey(1) & 0xFF
+            # 按键处理（方向键需要完整 keycode，不做 & 0xFF）
+            key_raw = cv2.waitKeyEx(1)
+            key = key_raw & 0xFF
+
+            # 方向键微调偏移（Windows: 高位编码）
+            step = config.OFFSET_STEP
+            if key_raw == 24248320 or key == 81:     # ← 左
+                gaze_tracker.adjust_offset(-step, 0)
+                print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
+            elif key_raw == 25559040 or key == 83:   # → 右
+                gaze_tracker.adjust_offset(step, 0)
+                print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
+            elif key_raw == 24903680 or key == 82:   # ↑ 上
+                gaze_tracker.adjust_offset(0, -step)
+                print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
+            elif key_raw == 26214400 or key == 84:   # ↓ 下
+                gaze_tracker.adjust_offset(0, step)
+                print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
+
             if key == config.EXIT_KEY:
                 break
             elif key == config.PAUSE_KEY:

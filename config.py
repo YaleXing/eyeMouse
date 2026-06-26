@@ -4,9 +4,9 @@
 
 # ── 摄像头 ─────────────────────────────────────────────
 CAMERA_INDEX = 0            # 摄像头编号（0 = 默认摄像头）
-CAMERA_WIDTH = 640          # 采集宽度
-CAMERA_HEIGHT = 480         # 采集高度
-CAMERA_FPS = 60             # 期望帧率
+CAMERA_WIDTH = 1280         # 采集宽度
+CAMERA_HEIGHT = 720         # 采集高度
+CAMERA_FPS = 30             # 期望帧率
 
 # ── 屏幕 ───────────────────────────────────────────────
 SCREEN_WIDTH = 1920         # 屏幕宽度（像素），运行时自动检测
@@ -15,8 +15,8 @@ SCREEN_HEIGHT = 1080        # 屏幕高度（像素），运行时自动检测
 # ── MediaPipe Face Mesh ────────────────────────────────
 FACE_MESH_MAX_FACES = 1
 FACE_MESH_REFINE_LANDMARKS = True   # 启用虹膜精细化
-FACE_MESH_MIN_DET_CONF = 0.7
-FACE_MESH_MIN_TRACK_CONF = 0.7
+FACE_MESH_MIN_DET_CONF = 0.1      # 低阈值适应弱光环境
+FACE_MESH_MIN_TRACK_CONF = 0.1    # 低跟踪阈值
 
 # ── 视线追踪 ──────────────────────────────────────────
 # 左眼关键点索引（MediaPipe Face Mesh）
@@ -41,8 +41,8 @@ MOUSE_MOVE_INTERVAL = 0.016  # 鼠标移动最小间隔（秒），约60fps
 MOUSE_SMOOTH_ENABLED = True  # 启用鼠标平滑
 
 # 卡尔曼滤波参数
-KALMAN_PROCESS_NOISE = 0.03
-KALMAN_MEASURE_NOISE = 1.0
+KALMAN_PROCESS_NOISE = 0.01   # 越小鼠标越稳（降噪越强）
+KALMAN_MEASURE_NOISE = 3.0    # 越大平滑越强
 
 # 鼠标移动速度曲线（非线性映射的幂次, 1.0=线性）
 MOUSE_SPEED_CURVE = 1.2
@@ -82,3 +82,6 @@ DEBUG_WINDOW_SCALE = 0.6     # 调试窗口缩放比例
 EXIT_KEY = 27                # Esc 退出
 PAUSE_KEY = ord('p')         # P 暂停/恢复
 RECALIBRATE_KEY = ord('c')   # C 重新校准
+
+# 方向键微调偏移（像素/步）
+OFFSET_STEP = 8
