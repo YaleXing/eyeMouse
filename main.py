@@ -35,14 +35,23 @@ def draw_debug_info(frame, landmarks, gaze_pos, mar, mouse_enabled, fps_val, man
     cv2.putText(frame, f"FPS: {fps_val:.1f}", (10, 60),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
 
-    # MAR 值
-    mar_color = (0, 0, 255) if mar > config.MOUTH_OPEN_THRESHOLD else (200, 200, 200)
-    cv2.putText(frame, f"MAR: {mar:.4f}", (10, 90),
+    # MAR 值 + 可视化条
+    is_open = mar > config.MOUTH_OPEN_THRESHOLD
+    mar_color = (0, 0, 255) if is_open else (200, 200, 200)
+    cv2.putText(frame, f"MAR: {mar:.4f} {'OPEN' if is_open else ''}", (10, 90),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, mar_color, 1)
+    # MAR 条
+    bar_x, bar_y, bar_w, bar_h = 10, 100, 150, 8
+    cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + bar_h), (80, 80, 80), -1)
+    fill = int(min(mar / 0.1, 1.0) * bar_w)
+    cv2.rectangle(frame, (bar_x, bar_y), (bar_x + fill, bar_y + bar_h), (0, 0, 255) if is_open else (0, 200, 0), -1)
+    # 阈值线
+    thresh_x = bar_x + int(config.MOUTH_OPEN_THRESHOLD / 0.1 * bar_w)
+    cv2.line(frame, (thresh_x, bar_y), (thresh_x, bar_y + bar_h), (255, 255, 0), 1)
 
     # 手动偏移
     if manual_offset is not None:
-        cv2.putText(frame, f"Offset: X={manual_offset[0]:.0f} Y={manual_offset[1]:.0f}", (10, 120),
+        cv2.putText(frame, f"Offset: X={manual_offset[0]:.0f} Y={manual_offset[1]:.0f}", (10, 125),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 100), 1)
 
     # 热键提示

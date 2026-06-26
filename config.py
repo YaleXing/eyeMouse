@@ -54,9 +54,9 @@ MOUTH_BOTTOM = 14           # 下唇中点
 MOUTH_LEFT = 78             # 左嘴角
 MOUTH_RIGHT = 308           # 右嘴角
 
-MOUTH_OPEN_THRESHOLD = 0.06  # MAR 阈值（超过此值视为张嘴）
-MOUTH_CLICK_COOLDOWN = 0.5   # 两次点击最小间隔（秒）
-MOUTH_HOLD_FRAMES = 2        # 连续 N 帧张嘴才触发点击（防抖）
+MOUTH_OPEN_THRESHOLD = 0.035 # MAR 阈值（超过此值视为张嘴，越小越灵敏）
+MOUTH_CLICK_COOLDOWN = 0.6   # 两次点击最小间隔（秒）
+MOUTH_HOLD_FRAMES = 3        # 连续 N 帧张嘴才触发点击（防抖）
 
 # ── 校准 ──────────────────────────────────────────────
 CALIBRATION_POINTS = 5       # 校准点数（5点：四角+中心）
