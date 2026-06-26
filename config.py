@@ -15,8 +15,8 @@ SCREEN_HEIGHT = 1080        # 屏幕高度（像素），运行时自动检测
 # ── MediaPipe Face Mesh ────────────────────────────────
 FACE_MESH_MAX_FACES = 1
 FACE_MESH_REFINE_LANDMARKS = True   # 启用虹膜精细化
-FACE_MESH_MIN_DET_CONF = 0.1      # 低阈值适应弱光环境
-FACE_MESH_MIN_TRACK_CONF = 0.1    # 低跟踪阈值
+FACE_MESH_MIN_DET_CONF = 0.5
+FACE_MESH_MIN_TRACK_CONF = 0.5
 
 # ── 视线追踪 ──────────────────────────────────────────
 # 左眼关键点索引（MediaPipe Face Mesh）

@@ -10,7 +10,7 @@ import cv2
 class Camera:
     """摄像头管理器"""
 
-    def __init__(self, index=0, width=640, height=480, fps=60, denoise=False):
+    def __init__(self, index=0, width=640, height=480, fps=60, denoise=True):
         self.index = index
         self.width = width
         self.height = height
@@ -24,9 +24,6 @@ class Camera:
         if not self.cap.isOpened():
             print(f"[错误] 无法打开摄像头 (index={self.index})")
             return False
-
-        # 设置自动曝光（修复暗光环境画面全黑的问题）
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
@@ -53,9 +50,9 @@ class Camera:
         if ret and frame is not None:
             # 水平翻转（镜像），让用户的左右与画面一致
             frame = cv2.flip(frame, 1)
-            # 降噪（MediaPipe 自带预处理，这里只做轻度处理避免破坏特征）
+            # 降噪：双边滤波（保边去噪，适合面部区域）
             if self.denoise:
-                frame = cv2.fastNlMeansDenoisingColored(frame, None, h=6, hForColoredImage=6, templateWindowSize=7, searchWindowSize=21)
+                frame = cv2.bilateralFilter(frame, d=5, sigmaColor=50, sigmaSpace=50)
         return ret, frame
 
     def release(self):

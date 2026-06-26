@@ -82,9 +82,9 @@ def run_calibration(camera, face_detector, gaze_tracker, screen_w, screen_h):
                 break
         return M, offset
 
-    print("[校准] 开始校准，请注视屏幕上的红点...")
+    print("[校准] 开始校准")
     print(f"[校准] 共 {len(calibrator.points)} 个校准点，每个需要注视 {config.CALIBRATION_HOLD_TIME} 秒")
-    print("[校准] 校准过程中请保持头部基本不动，只用眼球看红点")
+    print("[校准] 请自然地转头看向每个红点（不需要保持头部不动）")
 
     cv2.namedWindow("Calibration", cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty("Calibration", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)

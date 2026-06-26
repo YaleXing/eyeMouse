@@ -18,16 +18,16 @@ class GazeTracker:
     """视线追踪器"""
 
     def __init__(self):
-        # 合成视线的平滑器
+        # 合成视线的平滑器（灵敏跟手）
         self.smoother = AdaptiveSmoother(
-            alpha_min=0.06,
-            alpha_max=0.4,
-            velocity_threshold=0.05,
+            alpha_min=0.12,
+            alpha_max=0.6,
+            velocity_threshold=0.04,
         )
-        # 鼻尖位置的平滑器（更强平滑）
+        # 鼻尖位置的平滑器
         self.nose_smoother = AdaptiveSmoother(
-            alpha_min=0.04,
-            alpha_max=0.15,
+            alpha_min=0.1,
+            alpha_max=0.4,
             velocity_threshold=0.02,
         )
         # 校准映射
