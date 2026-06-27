@@ -7,6 +7,7 @@ CAMERA_INDEX = 0            # 摄像头编号（0 = 默认摄像头）
 CAMERA_WIDTH = 1280         # 采集宽度
 CAMERA_HEIGHT = 720         # 采集高度
 CAMERA_FPS = 30             # 期望帧率
+CAMERA_FLIP = True          # 水平翻转（镜像），有些摄像头需要设为 False
 
 # ── 屏幕 ───────────────────────────────────────────────
 SCREEN_WIDTH = 1920         # 屏幕宽度（像素），运行时自动检测

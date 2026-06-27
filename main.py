@@ -45,10 +45,11 @@ def draw_debug_info(frame, mode, gesture, gaze_pos, mar, finger_pos,
     if mode == 'hand':
         # 手势
         gesture_names = {
-            'point': 'INDEX FINGER (move)',
-            'fist': 'FIST (click!)',
-            'peace': 'PEACE',
+            'point': 'INDEX (move)',
+            'pinch': 'PINCH (click!)',
+            'peace': 'PEACE (right click)',
             'open': 'OPEN PALM',
+            'fist': 'FIST',
             'other': 'other',
             'none': 'no hand',
         }
@@ -83,7 +84,7 @@ def draw_debug_info(frame, mode, gesture, gaze_pos, mar, finger_pos,
                     (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (180, 180, 100), 1)
 
     # 热键
-    cv2.putText(frame, "TAB:switch ESC:quit P:pause WASD:offset", (10, h - 15),
+    cv2.putText(frame, "TAB:switch V:hide ESC:quit P:pause", (10, h - 15),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.38, (120, 120, 120), 1)
 
     # 光标位置标记
@@ -183,7 +184,8 @@ def main():
     print(f"[屏幕] {config.SCREEN_WIDTH}x{config.SCREEN_HEIGHT}")
 
     # 摄像头
-    camera = Camera(config.CAMERA_INDEX, config.CAMERA_WIDTH, config.CAMERA_HEIGHT, config.CAMERA_FPS)
+    camera = Camera(config.CAMERA_INDEX, config.CAMERA_WIDTH, config.CAMERA_HEIGHT,
+                    config.CAMERA_FPS, flip=config.CAMERA_FLIP)
     if not camera.open():
         print("[错误] 无法打开摄像头")
         return
@@ -193,6 +195,7 @@ def main():
     gaze_tracker = GazeTracker()
     mouth_detector = MouthDetector()
     hand_tracker = HandTracker()
+    hand_tracker.set_mirror(config.CAMERA_FLIP)
     mouse_controller = MouseController(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
 
     # 模式: 'hand' 或 'eye'
@@ -200,6 +203,7 @@ def main():
     print(f"[模式] 当前: 手部模式（食指控制） | 按 Tab 切换")
 
     paused = False
+    show_debug = True  # 是否显示调试窗口
     fps_counter = 0
     fps_time = time.time()
     fps_val = 0.0
@@ -243,11 +247,11 @@ def main():
                             finger_pos = smoothed
                             mouse_controller.move_to(smoothed[0], smoothed[1])
 
-                        # 握拳点击
-                        if gesture == 'fist' and now - fist_click_cooldown > 0.6:
+                        # 捏合点击（拇指+食指靠近）
+                        if gesture == 'pinch' and now - fist_click_cooldown > 0.6:
                             mouse_controller.click()
                             fist_click_cooldown = now
-                            print("[点击] 握拳触发")
+                            print("[点击] 捏合触发")
 
                 # ── 眼球模式 ──
                 else:
@@ -267,7 +271,7 @@ def main():
                         gaze_tracker.smoother.reset()
 
             # 调试画面
-            if config.DEBUG_SHOW_VIDEO:
+            if show_debug:
                 debug = frame.copy()
                 if mode == 'hand':
                     hand_tracker.draw_landmarks(debug)
@@ -280,6 +284,8 @@ def main():
                 h, w = debug.shape[:2]
                 debug = cv2.resize(debug, (int(w * scale), int(h * scale)))
                 cv2.imshow("EyeMouse Debug", debug)
+            else:
+                cv2.destroyWindow("EyeMouse Debug")
 
             # 按键
             key = cv2.waitKeyEx(1) & 0xFF
@@ -308,6 +314,9 @@ def main():
                 if M is not None:
                     gaze_tracker.set_calibration(M, offset)
                 print("[模式] 眼球模式")
+            elif key == ord('v'):  # v → 隐藏/显示调试画面
+                show_debug = not show_debug
+                print(f"[画面] {'显示' if show_debug else '隐藏'}")
             elif key == ord('a'):
                 gaze_tracker.adjust_offset(-config.OFFSET_STEP, 0)
             elif key == ord('d'):

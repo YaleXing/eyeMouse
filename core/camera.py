@@ -10,13 +10,14 @@ import cv2
 class Camera:
     """摄像头管理器"""
 
-    def __init__(self, index=0, width=640, height=480, fps=60, denoise=True):
+    def __init__(self, index=0, width=640, height=480, fps=60, denoise=True, flip=True):
         self.index = index
         self.width = width
         self.height = height
         self.fps = fps
         self.cap = None
         self.denoise = denoise
+        self.flip = flip
 
     def open(self) -> bool:
         """打开摄像头，返回是否成功"""
@@ -48,8 +49,8 @@ class Camera:
             return False, None
         ret, frame = self.cap.read()
         if ret and frame is not None:
-            # 水平翻转（镜像），让用户的左右与画面一致
-            frame = cv2.flip(frame, 1)
+            if self.flip:
+                frame = cv2.flip(frame, 1)
             # 降噪：双边滤波（保边去噪，适合面部区域）
             if self.denoise:
                 frame = cv2.bilateralFilter(frame, d=5, sigmaColor=50, sigmaSpace=50)
