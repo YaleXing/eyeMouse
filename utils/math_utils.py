@@ -56,10 +56,10 @@ def eye_aspect_ratio(landmarks, top_idx, bottom_idx, left_idx, right_idx):
     计算眼睛纵横比 (EAR)
     用于判断眼睛开合程度
     """
-    top = np.array(landmarks[top_idx][:2])
-    bottom = np.array(landmarks[bottom_idx][:2])
-    left = np.array(landmarks[left_idx][:2])
-    right = np.array(landmarks[right_idx][:2])
+    top = np.array([landmarks[top_idx].px, landmarks[top_idx].py])
+    bottom = np.array([landmarks[bottom_idx].px, landmarks[bottom_idx].py])
+    left = np.array([landmarks[left_idx].px, landmarks[left_idx].py])
+    right = np.array([landmarks[right_idx].px, landmarks[right_idx].py])
 
     vertical = np.linalg.norm(top - bottom)
     horizontal = np.linalg.norm(left - right)
@@ -71,10 +71,10 @@ def mouth_aspect_ratio(landmarks, top_idx, bottom_idx, left_idx, right_idx):
     计算嘴唇纵横比 (MAR)
     用于张嘴检测
     """
-    top = np.array(landmarks[top_idx][:2])
-    bottom = np.array(landmarks[bottom_idx][:2])
-    left = np.array(landmarks[left_idx][:2])
-    right = np.array(landmarks[right_idx][:2])
+    top = np.array([landmarks[top_idx].px, landmarks[top_idx].py])
+    bottom = np.array([landmarks[bottom_idx].px, landmarks[bottom_idx].py])
+    left = np.array([landmarks[left_idx].px, landmarks[left_idx].py])
+    right = np.array([landmarks[right_idx].px, landmarks[right_idx].py])
 
     vertical = np.linalg.norm(top - bottom)
     horizontal = np.linalg.norm(left - right)

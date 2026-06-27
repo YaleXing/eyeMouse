@@ -55,8 +55,8 @@ def draw_debug_info(frame, landmarks, gaze_pos, mar, mouse_enabled, fps_val, man
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 100), 1)
 
     # 热键提示
-    cv2.putText(frame, "ESC:quit  P:pause  C:recalibrate", (10, h - 15),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (150, 150, 150), 1)
+    cv2.putText(frame, "ESC:quit P:pause C:calibrate WASD:offset", (10, h - 15),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (150, 150, 150), 1)
 
     # 视线位置标记（如果在调试窗口中显示）
     if gaze_pos is not None and config.DEBUG_SHOW_GAZE:
@@ -204,7 +204,7 @@ def main():
         print("[校准] 跳过校准，使用默认映射（精度较低）")
 
     # ── 主循环 ──
-    print("\n[运行] ESC退出 | P暂停 | C重校准 | 方向键微调偏移")
+    print("\n[运行] ESC退出 | P暂停 | C重校准 | WASD微调偏移")
     paused = False
     fps_counter = 0
     fps_time = time.time()
@@ -277,22 +277,22 @@ def main():
                 debug_frame = cv2.resize(debug_frame, (int(w * scale), int(h * scale)))
                 cv2.imshow("EyeMouse Debug", debug_frame)
 
-            # 按键处理（方向键需要完整 keycode，不做 & 0xFF）
+            # 按键处理
             key_raw = cv2.waitKeyEx(1)
             key = key_raw & 0xFF
 
-            # 方向键微调偏移（Windows: 高位编码）
+            # 方向键微调偏移（WASD 替代方案，更可靠）
             step = config.OFFSET_STEP
-            if key_raw == 24248320 or key == 81:     # ← 左
+            if key == ord('a'):      # ← 左
                 gaze_tracker.adjust_offset(-step, 0)
                 print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
-            elif key_raw == 25559040 or key == 83:   # → 右
+            elif key == ord('d'):    # → 右
                 gaze_tracker.adjust_offset(step, 0)
                 print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
-            elif key_raw == 24903680 or key == 82:   # ↑ 上
+            elif key == ord('w'):    # ↑ 上
                 gaze_tracker.adjust_offset(0, -step)
                 print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
-            elif key_raw == 26214400 or key == 84:   # ↓ 下
+            elif key == ord('s'):    # ↓ 下
                 gaze_tracker.adjust_offset(0, step)
                 print(f"[偏移] X={gaze_tracker.manual_offset[0]:.0f} Y={gaze_tracker.manual_offset[1]:.0f}")
 
