@@ -51,8 +51,7 @@ class HandTracker:
         if self._lm is None:
             return None
         tip = self._lm[INDEX_TIP]
-        # 摄像头已镜像，MediaPipe 的 x 需要翻转
-        return np.array([1 - tip.x, tip.y])
+        return np.array([tip.x, tip.y])
 
     def is_finger_up(self, tip, pip):
         if self._lm is None:
