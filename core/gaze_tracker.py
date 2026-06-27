@@ -18,17 +18,17 @@ class GazeTracker:
     """视线追踪器（基于头部旋转角度）"""
 
     def __init__(self):
-        # 合成视线平滑器（灵敏优先）
+        # 合成视线平滑器
         self.smoother = AdaptiveSmoother(
-            alpha_min=0.2,
-            alpha_max=0.8,
-            velocity_threshold=0.03,
+            alpha_min=0.15,
+            alpha_max=0.65,
+            velocity_threshold=0.04,
         )
         # 头部旋转平滑器
         self.head_smoother = AdaptiveSmoother(
-            alpha_min=0.15,
-            alpha_max=0.6,
-            velocity_threshold=0.02,
+            alpha_min=0.1,
+            alpha_max=0.5,
+            velocity_threshold=0.03,
         )
         # 校准映射
         self.calibrated = False
@@ -120,8 +120,8 @@ class GazeTracker:
         else:
             head_delta = np.zeros(2)
 
-        # 合成：头部旋转（大范围定位）+ 虹膜（精细控制）
-        gaze = head_delta * 1.0 + iris_gaze * 2.0
+        # 合成：头部旋转（大范围）+ 虹膜（精细调整）
+        gaze = head_delta * 1.0 + iris_gaze * 0.4
 
         return gaze
 

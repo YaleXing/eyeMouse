@@ -13,23 +13,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
-import threading
 from core.camera import Camera
 from core.face_mesh import FaceMeshDetector
 from core.gaze_tracker import GazeTracker
 from core.mouth_detector import MouthDetector
 from core.mouse_controller import MouseController
 from core.calibrator import Calibrator
-
-
-def beep_done():
-    """播放完成提示音（异步，不阻塞主线程）"""
-    def _beep():
-        import winsound
-        winsound.Beep(800, 120)
-        winsound.Beep(1000, 120)
-        winsound.Beep(1200, 180)
-    threading.Thread(target=_beep, daemon=True).start()
 
 
 def draw_debug_info(frame, landmarks, gaze_pos, mar, mouse_enabled, fps_val, manual_offset=None):
@@ -211,7 +200,6 @@ def main():
     if M is not None:
         gaze_tracker.set_calibration(M, offset)
         print("[校准] 校准完成，鼠标控制已激活")
-        beep_done()
     else:
         print("[校准] 跳过校准，使用默认映射（精度较低）")
 
@@ -266,7 +254,6 @@ def main():
                 if clicked:
                     mouse_controller.click()
                     print("[点击] 张嘴触发左键")
-                    beep_done()
 
             elif not faces:
                 # 面部丢失时只重置平滑器，保留头部基准
@@ -335,7 +322,6 @@ def main():
                 if M is not None:
                     gaze_tracker.set_calibration(M, offset)
                     print("[校准] 重新校准完成")
-                    beep_done()
 
     except KeyboardInterrupt:
         print("\n[退出] 用户中断")
