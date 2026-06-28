@@ -28,8 +28,6 @@ class Camera:
         if self.cap is None:
             return False, None
         ret, frame = self.cap.read()
-        if ret and frame is not None:
-            frame = cv2.flip(frame, 1)
         return ret, frame
 
     def release(self):

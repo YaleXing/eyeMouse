@@ -200,10 +200,8 @@ def main():
             gaze_tracker = GazeTracker()
             mouth_detector = MouthDetector()
 
-    # 启动时检测手指方向
     ensure_hand()
-    flip_x = detect_direction(camera, hand_tracker)
-    hand_tracker.set_flip_x(flip_x)
+    hand_tracker.set_flip_x(True)  # 和网页版一致：1 - tip.x
 
     mode = 'hand'
     show_debug = False
