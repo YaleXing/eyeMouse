@@ -16,6 +16,69 @@ from core.camera import Camera
 from core.mouse_controller import MouseController
 
 
+def detect_direction(camera, hand_tracker):
+    """
+    启动时自动检测手指坐标方向
+    让用户把手指移到画面左侧和右侧，自动判断 x 是否需要翻转
+    """
+    win = "Direction Test - Move finger LEFT then RIGHT"
+    cv2.namedWindow(win)
+
+    # 采集左侧样本
+    print("[校准] 请把食指移到画面【左侧】，保持不动...")
+    left_samples = []
+    t0 = time.time()
+    while time.time() - t0 < 2.0:
+        ret, frame = camera.read()
+        if not ret:
+            continue
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        hand_tracker.detect(rgb)
+        fp = hand_tracker.get_finger_pos_raw()
+        if fp is not None:
+            left_samples.append(fp[0])
+        # 画提示
+        h, w = frame.shape[:2]
+        cv2.putText(frame, "Put finger on LEFT side", (w//4, h//2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        cv2.imshow(win, frame)
+        cv2.waitKey(1)
+
+    # 采集右侧样本
+    print("[校准] 请把食指移到画面【右侧】，保持不动...")
+    right_samples = []
+    t0 = time.time()
+    while time.time() - t0 < 2.0:
+        ret, frame = camera.read()
+        if not ret:
+            continue
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        hand_tracker.detect(rgb)
+        fp = hand_tracker.get_finger_pos_raw()
+        if fp is not None:
+            right_samples.append(fp[0])
+        h, w = frame.shape[:2]
+        cv2.putText(frame, "Put finger on RIGHT side", (w//4, h//2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        cv2.imshow(win, frame)
+        cv2.waitKey(1)
+
+    cv2.destroyWindow(win)
+
+    if not left_samples or not right_samples:
+        print("[校准] 未检测到手指，使用默认方向")
+        return False
+
+    left_avg = sum(left_samples) / len(left_samples)
+    right_avg = sum(right_samples) / len(right_samples)
+
+    # 如果左侧平均 < 右侧平均，说明 x 坐标和屏幕方向一致，不需要翻转
+    # 否则需要翻转
+    need_flip = left_avg > right_avg
+    print(f"[校准] 左侧x={left_avg:.3f} 右侧x={right_avg:.3f} → {'翻转' if need_flip else '正常'}")
+    return need_flip
+
+
 def draw_hud(frame, mode, gesture, cursor, mar, fps, paused):
     h, w = frame.shape[:2]
     mc = (0, 255, 255) if mode == 'hand' else (255, 200, 0)
@@ -137,16 +200,26 @@ def main():
             gaze_tracker = GazeTracker()
             mouth_detector = MouthDetector()
 
+    # 启动时检测手指方向
+    ensure_hand()
+    flip_x = detect_direction(camera, hand_tracker)
+    hand_tracker.set_flip_x(flip_x)
+
     mode = 'hand'
-    show_debug = False  # 默认隐藏画面
+    show_debug = False
     paused = False
     fps_c = 0
     fps_t = time.time()
     fps = 0.0
     click_cd = 0
 
+    # 创建一个隐藏的窗口用于接收按键
+    cv2.namedWindow("EyeMouse_keys", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("EyeMouse_keys", 1, 1)
+    cv2.moveWindow("EyeMouse_keys", -100, -100)
+
     print("[手部模式] 食指移动 | 捏合点击")
-    print("[热键] V显示画面 | Tab切换模式 | P暂停 | ESC退出")
+    print("[热键] V显示画面 | Tab切换 | P暂停 | ESC退出")
 
     try:
         while True:
@@ -169,7 +242,6 @@ def main():
 
             if not paused:
                 if mode == 'hand':
-                    ensure_hand()
                     lm = hand_tracker.detect(rgb)
                     if lm:
                         gesture = hand_tracker.get_gesture()
@@ -211,9 +283,13 @@ def main():
                 except cv2.error:
                     pass
 
-            key = cv2.waitKeyEx(1) & 0xFF
+            # 用小窗口接收按键
+            key = cv2.waitKey(1) & 0xFF
 
-            if key == 9:  # Tab
+            if key == ord('v'):
+                show_debug = not show_debug
+                print(f"[画面] {'显示' if show_debug else '隐藏'}")
+            elif key == 9:  # Tab
                 mode = 'eye' if mode == 'hand' else 'hand'
                 print(f"[模式] {'手部' if mode=='hand' else '眼球'}")
                 if mode == 'eye':
@@ -222,9 +298,6 @@ def main():
                                             config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
                     if M is not None:
                         gaze_tracker.set_calibration(M, off)
-            elif key == ord('v'):
-                show_debug = not show_debug
-                print(f"[画面] {'显示' if show_debug else '隐藏'}")
             elif key == ord('h'):
                 mode = 'hand'
                 print("[模式] 手部")
@@ -237,12 +310,9 @@ def main():
                     gaze_tracker.set_calibration(M, off)
             elif key == ord('p'):
                 paused = not paused
-                if paused:
-                    mouse.disable()
-                else:
-                    mouse.enable()
+                mouse.disable() if paused else mouse.enable()
                 print(f"[{'暂停' if paused else '恢复'}]")
-            elif key == 27:
+            elif key == 27:  # ESC
                 break
 
     except KeyboardInterrupt:

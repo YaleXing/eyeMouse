@@ -37,6 +37,10 @@ class HandTracker:
             alpha_min=0.3, alpha_max=0.85, velocity_threshold=0.02,
         )
         self._lm = None
+        self._flip_x = False  # 启动校准时自动设置
+
+    def set_flip_x(self, flip):
+        self._flip_x = flip
 
     def detect(self, frame_rgb):
         results = self.hands.process(frame_rgb)
@@ -46,12 +50,20 @@ class HandTracker:
         self._lm = None
         return None
 
-    def get_finger_pos(self):
-        """食指指尖归一化坐标 [0,1]"""
+    def get_finger_pos_raw(self):
+        """原始坐标（用于方向校准）"""
         if self._lm is None:
             return None
         tip = self._lm[INDEX_TIP]
         return np.array([tip.x, tip.y])
+
+    def get_finger_pos(self):
+        """校准后的归一化坐标 [0,1]"""
+        if self._lm is None:
+            return None
+        tip = self._lm[INDEX_TIP]
+        x = (1 - tip.x) if self._flip_x else tip.x
+        return np.array([x, tip.y])
 
     def is_finger_up(self, tip, pip):
         if self._lm is None:
@@ -62,7 +74,7 @@ class HandTracker:
         if self._lm is None:
             return 999
         p1, p2 = self._lm[a], self._lm[b]
-        return ((p1.x - p2.x)**2 + (1 - p2.y - (1 - p1.y))**2) ** 0.5
+        return ((p1.x - p2.x)**2 + (p1.y - p2.y)**2) ** 0.5
 
     def get_gesture(self):
         if self._lm is None:
