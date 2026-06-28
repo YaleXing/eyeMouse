@@ -37,7 +37,9 @@ class HandTracker:
             alpha_min=0.3, alpha_max=0.85, velocity_threshold=0.02,
         )
         self._lm = None
-        self._flip_x = False  # 启动校准时自动设置
+        self._flip_x = False
+        self._prev_pos = None  # 上一帧指尖位置（用于相对模式）
+        self.relative_gain = 1.5  # 相对模式灵敏度
 
     def set_flip_x(self, flip):
         self._flip_x = flip
@@ -97,10 +99,31 @@ class HandTracker:
             return 'open'
         return 'other'
 
+    def get_relative_delta(self):
+        """获取指尖相对上一帧的移动量（归一化），用于相对模式"""
+        pos = self.get_finger_pos()
+        if pos is None:
+            self._prev_pos = None
+            return None
+        if self._prev_pos is None:
+            self._prev_pos = pos.copy()
+            return None
+        delta = pos - self._prev_pos
+        self._prev_pos = pos.copy()
+        return delta
+
+    def reset_relative(self):
+        """重置相对模式基准"""
+        self._prev_pos = None
+
     def to_screen(self, pos, sw, sh):
-        x = clamp(pos[0] * sw, 0, sw - 1)
-        y = clamp(pos[1] * sh, 0, sh - 1)
-        return np.array([x, y])
+        """将归一化坐标映射到屏幕坐标（不对称边距）"""
+        # 上1/12, 左1/12, 右1/12, 下40%
+        x_lo, x_hi = 1/12, 11/12
+        y_lo, y_hi = 1/12, 0.6
+        x = clamp((pos[0] - x_lo) / (x_hi - x_lo), 0, 1)
+        y = clamp((pos[1] - y_lo) / (y_hi - y_lo), 0, 1)
+        return np.array([x * sw, y * sh])
 
     def draw(self, frame):
         if self._lm is not None:

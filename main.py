@@ -6,6 +6,7 @@ EyeMouse — 手势/视线鼠标控制
 
 import cv2
 import time
+import numpy as np
 import sys
 import os
 
@@ -204,20 +205,21 @@ def main():
     hand_tracker.set_flip_x(True)  # 和网页版一致：1 - tip.x
 
     mode = 'hand'
+    control = 'absolute'  # 'absolute' 或 'relative'
     show_debug = False
     paused = False
     fps_c = 0
     fps_t = time.time()
     fps = 0.0
     click_cd = 0
-    pinching = False  # 捏合状态（长按）
+    pinching = False
 
     cv2.namedWindow("EyeMouse_keys", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("EyeMouse_keys", 1, 1)
     cv2.moveWindow("EyeMouse_keys", -100, -100)
 
     print("[手势] 食指移动 | 捏合=长按 | 两指=单击 | 三指=双击")
-    print("[热键] V显示画面 | Tab切换 | P暂停 | ESC退出")
+    print("[热键] R切换绝对/相对 | V显示画面 | Tab切换 | P暂停 | ESC退出")
 
     try:
         while True:
@@ -243,11 +245,22 @@ def main():
                     lm = hand_tracker.detect(rgb)
                     if lm:
                         gesture = hand_tracker.get_gesture()
-                        fp = hand_tracker.get_finger_pos()
-                        if fp is not None:
-                            sp = hand_tracker.to_screen(fp, config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-                            cursor = hand_tracker.smoother.update(sp)
-                            mouse.move_to(cursor[0], cursor[1])
+
+                        if control == 'absolute':
+                            fp = hand_tracker.get_finger_pos()
+                            if fp is not None:
+                                sp = hand_tracker.to_screen(fp, config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
+                                cursor = hand_tracker.smoother.update(sp)
+                                mouse.move_to(cursor[0], cursor[1])
+                        else:
+                            delta = hand_tracker.get_relative_delta()
+                            if delta is not None:
+                                gain = hand_tracker.relative_gain
+                                pos = mouse.get_position()
+                                nx = pos[0] + delta[0] * config.SCREEN_WIDTH * gain
+                                ny = pos[1] + delta[1] * config.SCREEN_HEIGHT * gain
+                                mouse.move_to(nx, ny, smooth=False)
+                                cursor = np.array([nx, ny])
 
                         # 捏合 = 长按（按下/松开）
                         if gesture == 'pinch':
@@ -330,6 +343,10 @@ def main():
                 paused = not paused
                 mouse.disable() if paused else mouse.enable()
                 print(f"[{'暂停' if paused else '恢复'}]")
+            elif key == ord('r'):
+                control = 'relative' if control == 'absolute' else 'absolute'
+                hand_tracker.reset_relative()
+                print(f"[控制] {'绝对位置' if control == 'absolute' else '相对移动'}")
             elif key == 27:  # ESC
                 break
 
