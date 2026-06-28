@@ -210,13 +210,13 @@ def main():
     fps_t = time.time()
     fps = 0.0
     click_cd = 0
+    pinching = False  # 捏合状态（长按）
 
-    # 创建一个隐藏的窗口用于接收按键
     cv2.namedWindow("EyeMouse_keys", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("EyeMouse_keys", 1, 1)
     cv2.moveWindow("EyeMouse_keys", -100, -100)
 
-    print("[手部模式] 食指移动 | 捏合点击")
+    print("[手势] 食指移动 | 捏合=长按 | 两指=单击 | 三指=双击")
     print("[热键] V显示画面 | Tab切换 | P暂停 | ESC退出")
 
     try:
@@ -248,10 +248,30 @@ def main():
                             sp = hand_tracker.to_screen(fp, config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
                             cursor = hand_tracker.smoother.update(sp)
                             mouse.move_to(cursor[0], cursor[1])
-                        if gesture == 'pinch' and now - click_cd > 0.6:
+
+                        # 捏合 = 长按（按下/松开）
+                        if gesture == 'pinch':
+                            if not pinching:
+                                mouse.mouse_down()
+                                pinching = True
+                                print("[长按] 按下")
+                        else:
+                            if pinching:
+                                mouse.mouse_up()
+                                pinching = False
+                                print("[长按] 松开")
+
+                        # 两指 = 单击
+                        if gesture == 'peace' and now - click_cd > 0.6:
                             mouse.click()
                             click_cd = now
-                            print("[点击] 捏合")
+                            print("[点击] 两指单击")
+
+                        # 三指 = 双击
+                        if gesture == 'three' and now - click_cd > 0.6:
+                            mouse.double_click()
+                            click_cd = now
+                            print("[双击] 三指")
                 else:
                     ensure_eye()
                     faces = face_detector.detect(rgb)

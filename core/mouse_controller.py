@@ -62,10 +62,28 @@ class MouseController:
         pyautogui.moveTo(int(x), int(y), _pause=False)
 
     def click(self, button="left"):
-        """执行一次鼠标点击"""
+        """单击"""
         if not self._enabled:
             return
         pyautogui.click(button=button, _pause=False)
+
+    def double_click(self, button="left"):
+        """双击"""
+        if not self._enabled:
+            return
+        pyautogui.doubleClick(button=button, _pause=False)
+
+    def mouse_down(self, button="left"):
+        """按下鼠标"""
+        if not self._enabled:
+            return
+        pyautogui.mouseDown(button=button, _pause=False)
+
+    def mouse_up(self, button="left"):
+        """松开鼠标"""
+        if not self._enabled:
+            return
+        pyautogui.mouseUp(button=button, _pause=False)
 
     def move_relative(self, dx, dy):
         """相对移动（备用）"""

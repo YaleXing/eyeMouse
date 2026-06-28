@@ -91,6 +91,8 @@ class HandTracker:
             return 'fist'
         if count == 2 and idx and mid:
             return 'peace'
+        if count == 3 and idx and mid and ring:
+            return 'three'
         if count == 4:
             return 'open'
         return 'other'
